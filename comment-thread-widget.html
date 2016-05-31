@@ -133,11 +133,12 @@
           <paper-button on-click="_voteUp" disabled="[[!isWriter]]">
               <iron-icon icon="thumb-up" class="active" hidden="{{!_isEqual(data.myRating,1)}}"></iron-icon>
               <iron-icon icon="thumb-up" hidden="{{_isEqual(data.myRating,1)}}"></iron-icon>
-              [[data.rating]]
+              [[data.upvotes]]
           </paper-button>
-          <paper-button on-click="_voteDown" hidden="[[!isWriter]]">
+          <paper-button on-click="_voteDown" disabled="[[!isWriter]]">
               <iron-icon icon="thumb-down" class="active" hidden="{{!_isEqual(data.myRating,-1)}}"></iron-icon>
               <iron-icon icon="thumb-down" hidden="{{_isEqual(data.myRating,-1)}}"></iron-icon>
+              [[data.downvotes]]
           </paper-button>
           <paper-button on-click="_toggleSubcomments">
               <iron-icon icon="communication:comment" class="active" hidden="{{!showSubcomments}}"></iron-icon>
@@ -251,7 +252,8 @@
       },
 
       _receiveVote(event) {
-        this.set('data.rating', event.target.lastResponse.rating);
+        this.set('data.upvotes', event.target.lastResponse.upvotes);
+        this.set('data.downvotes', event.target.lastResponse.downvotes);
       },
 
       _receiveEditComment(event) {
