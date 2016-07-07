@@ -12,14 +12,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
-    <title>comment-thread-widget Demo</title>
+    <title>las2peer-comment-thread-widget Demo</title>
     <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
-    <link rel="import" href="../comment-thread-widget.html">
+    <link rel="import" href="../las2peer-comment-thread-widget.html">
   </head>
   <body unresolved>
-    <h1><code>&lt;comment-thread-widget&gt;</code> Demo</h1>
+    <h1><code>&lt;las2peer-comment-thread-widget&gt;</code> Demo</h1>
 
-    <p>This example generates a new thread and sets up example permissions as shown in the dropdown. Or </p>
+    <p>This example generates a new thread and sets up example permissions as shown in the dropdown. <button onclick="createThread()">Generate new Thread</button></p>
 
     <h2>Authentication</h2>
     <p>
@@ -34,8 +34,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <h2>Comments</h2>
 
-    <comment-thread-widget id="comments">
-    </comment-thread-widget>
+    <las2peer-comment-thread-widget id="comments">
+    </las2peer-comment-thread-widget>
 
     <script>
       var comments = document.getElementById("comments")

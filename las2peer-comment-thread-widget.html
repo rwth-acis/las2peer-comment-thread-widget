@@ -14,9 +14,6 @@
 
 <script src="../time-elements/time-elements.js"></script>
 
-
-
-
 <dom-module id="single-comment">
   <template>
     <iron-ajax id="ajaxComment"
@@ -497,13 +494,13 @@ is set.
 
 Example:
 
-    <comment-thread-widget threadId='...'></comment-thread-widget>
+    <las2peer-comment-thread-widget threadId='...'></las2peer-comment-thread-widget>
 
 
 @demo demo/index.html
 -->
 
-<dom-module id="comment-thread-widget">
+<dom-module id="las2peer-comment-thread-widget">
   <template>
     <style>
       :host {
@@ -519,7 +516,7 @@ Example:
 
   <script>
     Polymer({
-      is: 'comment-thread-widget',
+      is: 'las2peer-comment-thread-widget',
 
       properties: {
           _baseUrl:  {

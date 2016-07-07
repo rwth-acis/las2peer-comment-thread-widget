@@ -1,5 +1,5 @@
 {
-  "name": "comment-thread-widget",
+  "name": "las2peer-comment-thread-widget",
   "version": "0.1.0",
   "authors": [
     "Jasper Nalbach <nalbach@dbis.rwth-aachen.de>"
@@ -10,9 +10,9 @@
     "polymer",
     "las2peer"
   ],
-  "main": "comment-thread-widget.html",
+  "main": "las2peer-comment-thread-widget.html",
   "license": "MIT",
-  "homepage": "https://github.com/rwth-acis/comment-thread-widget/",
+  "homepage": "https://github.com/rwth-acis/las2peer-comment-thread-widget/",
   "ignore": [
     "/.*",
     "/test/"
