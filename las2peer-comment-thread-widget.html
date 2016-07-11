@@ -10,6 +10,7 @@
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-input/paper-textarea.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <script src="../time-elements/time-elements.js"></script>
@@ -104,11 +105,15 @@
       }
     </style>
 
-    <div class="error" hidden="[[!_hasError]]">
-      An error occurred.
-    </div>
+    <paper-dialog modal="true" id="error">
+      <h2>Error</h2>
+      <div>An error occurred. Please try again.</div>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Close</paper-button>
+      </div>
+    </paper-dialog>
 
-    <paper-card hidden="[[_hasError]]">
+    <paper-card>
         <div class="card-content">
           <div class="details">
             [[data.author.name]] - <relative-time datetime$="[[_transformDate(data.date)]]"></relative-time>
@@ -120,7 +125,7 @@
           <template is="dom-if" if="{{showEdit}}">
             <form is="iron-form" on-iron-form-presubmit="_editComment">
               <paper-textarea name="body" label="comment" required auto-validate value="[[data.body]]"></paper-textarea><br>
-              <paper-button on-click="_submitButton" disabled="[[_editingComment]]">Edit Comment</paper-button>
+              <paper-button on-click="_submitButton" disabled="[[_editingComment]]">Save</paper-button>
               <paper-spinner active="[[_editingComment]]"></paper-spinner>
             </form>
           </template>
@@ -187,10 +192,6 @@
             value: false
           },
           _editingComment: {
-            type: Boolean,
-            value: false
-          },
-          _hasError: {
             type: Boolean,
             value: false
           },
@@ -288,8 +289,8 @@
       // Error handling
 
       _handleError(event) {
-        this._hasError = true;
-        console.log(event);
+        document.getElementById('error').open()
+        console.log(event)
       },
 
     });
@@ -350,12 +351,21 @@
       }
     </style>
 
-    <div class="error" hidden="[[!_hasError]]">
-      An error occurred.
-    </div>
+    <paper-dialog modal="true" id="error">
+      <h2>Error</h2>
+      <div>An error occurred. Please try again.</div>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Close</paper-button>
+      </div>
+    </paper-dialog>
 
-    <div class="comments" hidden="[[_hasError]]">
+    <paper-card hidden="[[!_accessDenied]]" style="width:100%">
+      <div class="card-content">
+        Sorry, you do not have access to these comments. Please log in or ask the owner for access rights.
+      </div>
+    </paper-card>
 
+    <div class="comments" hidden=[[_accessDenied]]>
       <template is="dom-repeat" items="[[_data]]">
           <single-comment base-url="[[baseUrl]]" id="[[item.id]]" data="{{item}}" is-admin="[[isAdmin]]" is-writer="[[isWriter]]" on-deleted="_receiveDeleteComment" request-headers="[[requestHeaders]]"></single-comment>
       </template>
@@ -401,7 +411,7 @@
             type: Boolean,
             value: false
           },
-          _hasError: {
+          _accessDenied: {
             type: Boolean,
             value: false
           },
@@ -432,20 +442,24 @@
       // Data processing
 
       _receiveThread(event) {
+        this._accessDenied = false;
         this._data = event.target.lastResponse.comments;
         this.isWriter = event.target.lastResponse.isWriter;
         this.isAdmin = event.target.lastResponse.isAdmin;
       },
 
       _receiveComments(event) {
+        this._accessDenied = false;
         this._data = event.target.lastResponse.comments;
       },
 
       _receiveSendComment(event) {
+        this._accessDenied = false;
         this.push('_data', {id: event.target.lastResponse, unresolved: true});
       },
 
       _receiveDeleteComment(event) {
+        this._accessDenied = false;
         for (var i = 0; i < this._data.length; i++) {
           if (this._data[i].id == event.detail.commentId) {
             this.splice('_data', i, 1);
@@ -479,8 +493,14 @@
       // Error handling
 
       _handleError(event) {
-        this._hasError=true;
-        console.log(event);
+        console.log(event)
+
+        if (event.detail.error.message.includes("403")) {
+          this._accessDenied = true;
+        }
+        else {
+          document.getElementById('error').open()
+        }
       },
 
     });

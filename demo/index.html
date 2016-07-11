@@ -28,7 +28,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
        <option value="User B">User B (writing access)</option>
        <option value="User C">User C (writing access)</option>
        <option value="User D">User D (read-only)</option>
-       <option value="anonymous">anonymous (read-only)</option>
+       <option value="anonymous">anonymous (no access)</option>
       </select>
     </p>
 
@@ -71,7 +71,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         };
         xhttp.open("POST", "https://steen.informatik.rwth-aachen.de:9080/commentmanagement/threads", true);
         xhttp.setRequestHeader("Authorization", "Basic " + btoa("User A:userAPass"));
-        xhttp.send('{owner:"User A", writer:"User B,User C", reader:"User D,anonymous"}');
+        xhttp.send('{owner:"User A", writer:"User B,User C", reader:"User D"}');
       }
 
       function setThread() {
