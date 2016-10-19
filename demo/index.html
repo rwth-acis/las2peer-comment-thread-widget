@@ -83,8 +83,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }
 
-      setThread()
-      setUser()
+      window.addEventListener("WebComponentsReady", function() {
+        setThread()
+        setUser()
+      });
     </script>
   </body>
 </html>
