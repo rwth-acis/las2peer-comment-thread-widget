@@ -573,6 +573,9 @@ Example:
           }
       },
       _computeBaseURL: function(base) {
+        if (!base.endsWith('/')) {
+          base = base + '/';
+        }
         return base + "comments";
       },
       _computeHeaders: function(loginName,loginPassword,loginOidcToken,loginOidcProvider) {
