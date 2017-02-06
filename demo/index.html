@@ -69,7 +69,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             setThread()
           }
         };
-        xhttp.open("POST", "https://steen.informatik.rwth-aachen.de:9080/commentmanagement/threads", true);
+        xhttp.open("POST", "https://las2peer.dbis.rwth-aachen.de:9098/commentmanagement/threads", true);
         xhttp.setRequestHeader("Authorization", "Basic " + btoa("User A:userAPass"));
         xhttp.send('{owner:"User A", writer:"User B,User C", reader:"User D"}');
       }
