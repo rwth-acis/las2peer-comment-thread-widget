@@ -1,0 +1,45 @@
+{
+  "name": "las2peer-comment-thread-widget",
+  "authors": [
+    "Jasper Nalbach <nalbach@dbis.rwth-aachen.de>"
+  ],
+  "description": "A frontend for the las2peer-ThreadedComment-Service",
+  "keywords": [
+    "web-component",
+    "polymer",
+    "las2peer"
+  ],
+  "main": "las2peer-comment-thread-widget.html",
+  "license": "MIT",
+  "homepage": "https://github.com/rwth-acis/las2peer-comment-thread-widget/",
+  "ignore": [
+    "/.*",
+    "/test/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0",
+    "paper-card": "PolymerElements/paper-card#^1.1.1",
+    "paper-button": "PolymerElements/paper-button#^1.0.11",
+    "iron-icon": "PolymerElements/iron-icon#^1.0.8",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
+    "paper-input": "PolymerElements/paper-input#^1.1.11",
+    "iron-form": "PolymerElements/iron-form#^1.0.16",
+    "paper-spinner": "PolymerElements/paper-spinner#^1.1.1",
+    "time-elements": "^0.5.0",
+    "paper-dialog": "PolymerElements/paper-dialog#^1.0.4"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "^4.0.0"
+  },
+  "_release": "5291eaeb28",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "5291eaeb2870cbe36c3860567157147e2ae300c7"
+  },
+  "_source": "https://github.com/rwth-acis/las2peer-comment-thread-widget.git",
+  "_target": "master",
+  "_originalSource": "rwth-acis/las2peer-comment-thread-widget",
+  "_direct": true
+}
