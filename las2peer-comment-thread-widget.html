@@ -1,19 +1,19 @@
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="bower_components/polymer/polymer.html">
 
-<link rel="import" href="../iron-ajax/iron-ajax.html">
-<link rel="import" href="../paper-card/paper-card.html">
-<link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../iron-icons/communication-icons.html">
-<link rel="import" href="../iron-icons/editor-icons.html">
-<link rel="import" href="../iron-form/iron-form.html">
-<link rel="import" href="../paper-input/paper-input.html">
-<link rel="import" href="../paper-input/paper-textarea.html">
-<link rel="import" href="../paper-spinner/paper-spinner.html">
-<link rel="import" href="../paper-dialog/paper-dialog.html">
-<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="bower_components/paper-card/paper-card.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="bower_components/iron-form/iron-form.html">
+<link rel="import" href="bower_components/paper-input/paper-input.html">
+<link rel="import" href="bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
 
-<script src="../time-elements/time-elements.js"></script>
+<script src="bower_components/time-elements/src/index.js"></script>
 
 <dom-module id="single-comment">
   <template>
@@ -168,132 +168,137 @@
   </template>
 
   <script>
-    Polymer({
-      is: 'single-comment',
+      class singleComment extends Polymer.Element{
+          static get is() { return 'single-comment'; }
 
-      properties: {
-          isWriter: {
-            type: Boolean,
-            value: false
-          },
-          isAdmin: {
-            type: Boolean,
-            value: false
-          },
-          id: String,
-          baseUrl: String,
-          data: Object,
-          showSubcomments: {
-            type: Boolean,
-            value: false
-          },
-          showEdit: {
-            type: Boolean,
-            value: false
-          },
-          _editingComment: {
-            type: Boolean,
-            value: false
-          },
-          requestHeaders: {
-            type: Object,
-            value: {}
+          static get properties() {
+              return {
+                  isWriter: {
+                      type: Boolean,
+                      value: false
+                  },
+                  isAdmin: {
+                      type: Boolean,
+                      value: false
+                  },
+                  id: String,
+                  baseUrl: String,
+                  data: Object,
+                  showSubcomments: {
+                      type: Boolean,
+                      value: false
+                  },
+                  showEdit: {
+                      type: Boolean,
+                      value: false
+                  },
+                  _editingComment: {
+                      type: Boolean,
+                      value: false
+                  },
+                  requestHeaders: {
+                      type: Object,
+                      value: {}
+                  }
+              };
           }
-      },
 
+          constructor() {
+              super();
+          }
 
-      // Element Lifecycle
+          connectedCallback() {
+              if (this.data.unresolved === true) {
+                  this.shadowRoot.querySelector('#ajaxComment').generateRequest();
+              }
+          }
 
-      ready: function(){
-        if (this.data.unresolved == true) {
-          this.$.ajaxComment.generateRequest();
-        }
-      },
+          // Element Behavior
 
-      // Element Behavior
+          _toggleSubcomments: function(event) {
+              this.showSubcomments = !this.showSubcomments;
+          }
 
-      _toggleSubcomments: function(event) {
-        this.showSubcomments = !this.showSubcomments;
-      },
+          _toggleEdit: function(event) {
+              this.showEdit = !this.showEdit;
+          }
 
-      _toggleEdit: function(event) {
-        this.showEdit = !this.showEdit;
-      },
+          _hideEdit: function(me, admin) {
+              return !(me || admin);
+          }
 
-      _hideEdit: function(me, admin) {
-        return !(me || admin);
-      },
+          _isEqual: function(val1,val2) {
+              return val1==val2;
+          }
 
-      _isEqual: function(val1,val2) {
-        return val1==val2;
-      },
+          _submitButton(event) {
+              event.target.parentElement.submit();
+          }
 
-      _submitButton(event) {
-        Polymer.dom(event).localTarget.parentElement.submit();
-      },
+          _transformDate(date) {
+              if (date!=undefined)
+                  return date.replace(" ","T");
+              else
+                  return "";
+          }
 
-      _transformDate(date) {
-        if (date!=undefined)
-          return date.replace(" ","T");
-        else
-          return "";
-      },
+          // Data processing
 
-      // Data processing
+          _receiveComment(event) {
+              this.data = event.target.lastResponse;
+          }
 
-      _receiveComment(event) {
-        this.data = event.target.lastResponse;
-      },
+          _receiveDeleteComment(event) {
+              this.fire('deleted', {commentId: this.id});
+          }
 
-      _receiveDeleteComment(event) {
-        this.fire('deleted', {commentId: this.id});
-      },
+          _receiveVote(event) {
+              this.set('data.upvotes', event.target.lastResponse.upvotes);
+              this.set('data.downvotes', event.target.lastResponse.downvotes);
+          }
 
-      _receiveVote(event) {
-        this.set('data.upvotes', event.target.lastResponse.upvotes);
-        this.set('data.downvotes', event.target.lastResponse.downvotes);
-      },
+          _receiveEditComment(event) {
+              this.data = event.target.lastResponse;
+              this.showEdit = false;
+          }
 
-      _receiveEditComment(event) {
-        this.data = event.target.lastResponse;
-        this.showEdit = false;
-      },
+          // send requests
 
-      // send requests
+          _deleteComment(event) {
+              this.shadowRoot.querySelector('#ajaxDeleteComment').generateRequest();
+          }
 
-      _deleteComment(event) {
-        this.$.ajaxDeleteComment.generateRequest();
-      },
+          _voteUp(event) {
+              this.set('data.myRating', 1);
+              this.shadowRoot.querySelector('#ajaxVoteUp').generateRequest();
+          }
 
-      _voteUp(event) {
-        this.set('data.myRating', 1);
-        this.$.ajaxVoteUp.generateRequest();
-      },
+          _voteDown(event) {
+              this.set('data.myRating', -1);
+              this.shadowRoot.querySelector('#ajaxVoteDown').generateRequest();
+          }
 
-      _voteDown(event) {
-        this.set('data.myRating', -1);
-        this.$.ajaxVoteDown.generateRequest();
-      },
+          _editComment(event) {
+              event.preventDefault()
 
-      _editComment(event) {
-        event.preventDefault()
+              var form = Polymer.dom(event).localTarget;
+              var ajax = this.shadowRoot.querySelector('#ajaxEditComment');
 
-        var form = Polymer.dom(event).localTarget;
-        var ajax = this.$.ajaxEditComment;
+              ajax.body = form.querySelector('paper-textarea').value;
 
-        ajax.body = form.elements.body.value;
+              ajax.generateRequest();
+          }
 
-        ajax.generateRequest();
-      },
+          // Error handling
 
-      // Error handling
+          _handleError(event) {
+              document.getElementById('error').open()
+              console.log(event)
+          }
+      }
 
-      _handleError(event) {
-        document.getElementById('error').open()
-        console.log(event)
-      },
+      window.customElements.define(singleComment.is, singleComment);
 
-    });
   </script>
 </dom-module>
 
@@ -384,126 +389,132 @@
 
 
   <script>
-    Polymer({
-      is: 'comment-list',
+      class commentList extends Polymer.Element{
+          static get is() { return 'comment-list'; }
 
-      properties: {
-          isWriter: {
-            type: Boolean,
-            value: false
-          },
-          isAdmin: {
-            type: Boolean,
-            value: false
-          },
-          isThread: {
-            type: Boolean,
-            value: false
-          },
-          id: String,
-          baseUrl: String,
-          _data: Object,
-          _shownSubcomments: {
-            type: Object,
-            value: {}
-          },
-          _submittingComment: {
-            type: Boolean,
-            value: false
-          },
-          _accessDenied: {
-            type: Boolean,
-            value: false
-          },
-          requestHeaders: {
-            type: Object,
-            value: {}
+          static get properties() {
+              return {
+                  isWriter: {
+                      type: Boolean,
+                      value: false
+                  },
+                  isAdmin: {
+                      type: Boolean,
+                      value: false
+                  },
+                  isThread: {
+                      type: Boolean,
+                      value: false
+                  },
+                  id: String,
+                  baseUrl: String,
+                  _data: Object,
+                  _shownSubcomments: {
+                      type: Object,
+                      value: {}
+                  },
+                  _submittingComment: {
+                      type: Boolean,
+                      value: false
+                  },
+                  _accessDenied: {
+                      type: Boolean,
+                      value: false
+                  },
+                  requestHeaders: {
+                      type: Object,
+                      value: {}
+                  }
+              };
           }
-      },
 
-
-      // Element Lifecycle
-
-      ready: function(){
-        if (this.isThread == true) {
-          this.$.ajaxThread.auto = true;
-        }
-        else {
-          this.$.ajaxComments.auto = true;
-        }
-      },
-
-      // Element Behavior
-
-      _submitButton(event) {
-        Polymer.dom(event).localTarget.parentElement.submit();
-      },
-
-      // Data processing
-
-      _receiveThread(event) {
-        this._accessDenied = false;
-        this._data = event.target.lastResponse.comments;
-        this.isWriter = event.target.lastResponse.isWriter;
-        this.isAdmin = event.target.lastResponse.isAdmin;
-      },
-
-      _receiveComments(event) {
-        this._accessDenied = false;
-        this._data = event.target.lastResponse.comments;
-      },
-
-      _receiveSendComment(event) {
-        this._accessDenied = false;
-        this.push('_data', {id: event.target.lastResponse, unresolved: true});
-      },
-
-      _receiveDeleteComment(event) {
-        this._accessDenied = false;
-        for (var i = 0; i < this._data.length; i++) {
-          if (this._data[i].id == event.detail.commentId) {
-            this.splice('_data', i, 1);
-            break;
+          constructor() {
+              super();
           }
-        }
-      },
 
-      // send requests
+          connectedCallback() {
+              super.connectedCallback();
+              if (this.isThread == true) {
+                  this.shadowRoot.querySelector('#ajaxThread').auto = true;
+              }
+              else {
+                  this.shadowRoot.querySelector('#ajaxComments').auto = true;
+              }
+          }
 
-      _submitComment(event) {
-        event.preventDefault()
+          // Element Behavior
 
-        var form = Polymer.dom(event).localTarget;
-        var ajax = this.$.ajaxSubmitComment;
+          _submitButton(event) {
+              event.target.parentElement.submit();
+          }
 
-        if (this.isThread) {
-          ajax.url = this.baseUrl+"/threads/"+this.id
-        }
-        else {
-          ajax.url = this.baseUrl+"/comment/"+this.id+"/comments"
-        }
+          // Data processing
 
-        ajax.body = form.elements.body.value;
+          _receiveThread(event) {
+              this._accessDenied = false;
+              this._data = event.target.lastResponse.comments;
+              this.isWriter = event.target.lastResponse.isWriter;
+              this.isAdmin = event.target.lastResponse.isAdmin;
+          }
 
-        form.elements.body.value = "";
+          _receiveComments(event) {
+              this._accessDenied = false;
+              this._data = event.target.lastResponse.comments;
+          }
 
-        ajax.generateRequest();
-      },
+          _receiveSendComment(event) {
+              this._accessDenied = false;
+              this.push('_data', {id: event.target.lastResponse, unresolved: true});
+          }
 
-      // Error handling
+          _receiveDeleteComment(event) {
+              this._accessDenied = false;
+              for (var i = 0; i < this._data.length; i++) {
+                  if (this._data[i].id == event.detail.commentId) {
+                      this.splice('_data', i, 1);
+                      break;
+                  }
+              }
+          }
 
-      _handleError(event) {
-        console.log(event)
+          // send requests
 
-        if (event.detail.error.message.includes("403")) {
-          this._accessDenied = true;
-        }
-        else {
-          document.getElementById('error').open()
-        }
-      },
+          _submitComment(event) {
+              event.preventDefault()
 
-    });
+              var form = Polymer.dom(event).localTarget;
+              var ajax = this.$.ajaxSubmitComment;
+
+              if (this.isThread) {
+                  ajax.url = this.baseUrl+"/threads/"+this.id
+              }
+              else {
+                  ajax.url = this.baseUrl+"/comment/"+this.id+"/comments"
+              }
+
+              ajax.body = form.querySelector('paper-textarea').value;
+
+              form.querySelector('paper-textarea').value = "";
+
+              ajax.generateRequest();
+          }
+
+          // Error handling
+
+          _handleError(event) {
+              console.log(event)
+
+              if (event.detail.error.message.includes("403")) {
+                  this._accessDenied = true;
+              }
+              else {
+                  document.getElementById('error').open()
+              }
+          }
+      }
+
+      window.customElements.define(commentList.is, commentList);
+
   </script>
 </dom-module>
 
@@ -535,68 +546,73 @@ Example:
   </template>
 
   <script>
-    Polymer({
-      is: 'las2peer-comment-thread-widget',
+      class las2peerCommentThreadWidget extends Polymer.Element {
+          static get is() { return 'las2peer-comment-thread-widget'; }
 
-      properties: {
-          _baseUrl:  {
-            type: String,
-            computed: '_computeBaseURL(baseUrl)'
-          },
-          baseUrl: {
-              type: String,
-              value: 'https://las2peer.dbis.rwth-aachen.de:9098/',
-          },
-          thread: {
-              type: String,
-              value: null
-          },
-          loginName: {
-            type: String,
-            value: null
-          },
-          loginPassword: {
-            type: String,
-            value: null
-          },
-          loginOidcToken: {
-            type: String,
-            value: null
-          },
-          loginOidcProvider: {
-            type: String,
-            value: null
-          },
-          _requestHeaders: {
-            type: Object,
-            computed: '_computeHeaders(loginName,loginPassword,loginOidcToken,loginOidcProvider)'
+          static get properties() {
+              return {
+                  _baseUrl:  {
+                      type: String,
+                          computed: '_computeBaseURL(baseUrl)'
+                  },
+                  baseUrl: {
+                      type: String,
+                          value: 'https://las2peer.dbis.rwth-aachen.de:9098/',
+                  },
+                  thread: {
+                      type: String,
+                          value: null
+                  },
+                  loginName: {
+                      type: String,
+                          value: null
+                  },
+                  loginPassword: {
+                      type: String,
+                          value: null
+                  },
+                  loginOidcToken: {
+                      type: String,
+                          value: null
+                  },
+                  loginOidcProvider: {
+                      type: String,
+                          value: null
+                  },
+                  _requestHeaders: {
+                      type: Object,
+                          computed: '_computeHeaders(loginName,loginPassword,loginOidcToken,loginOidcProvider)'
+                  }
+              };
           }
-      },
-      _computeBaseURL: function(base) {
-        if (!base.endsWith('/')) {
-          base = base + '/';
-        }
-        return base + "comments";
-      },
-      _computeHeaders: function(loginName,loginPassword,loginOidcToken,loginOidcProvider) {
-        var headers = {};
 
-        if (loginName != null && loginPassword != null) {
-          headers["Authorization"] = "Basic " + btoa(loginName + ":" + loginPassword);
-        }
-        else if(loginOidcToken != null) {
-          headers["access_token"] = loginOidcToken;
-
-          if (loginOidcProvider != null) {
-            headers["oidc_provider"] = loginOidcProvider;
+          _computeBaseURL: function(base) {
+              if (!base.endsWith('/')) {
+                  base = base + '/';
+              }
+              return base + "comments";
           }
-        }
+          _computeHeaders: function(loginName,loginPassword,loginOidcToken,loginOidcProvider) {
+              var headers = {};
 
-        return headers;
-      },
-      _isNull(val) {
-        return val == null;
+              if (loginName != null && loginPassword != null) {
+                  headers["Authorization"] = "Basic " + btoa(loginName + ":" + loginPassword);
+              }
+              else if(loginOidcToken != null) {
+                  headers["access_token"] = loginOidcToken;
+
+                  if (loginOidcProvider != null) {
+                      headers["oidc_provider"] = loginOidcProvider;
+                  }
+              }
+
+              return headers;
+          }
+          _isNull(val) {
+              return val == null;
+          }
       }
-    });
+
+      window.customElements.define(las2peerCommentThreadWidget.is, las2peerCommentThreadWidget);
   </script>
 </dom-module>
