@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>las2peer-comment-widget test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../las2peer-comment-widget.html">
+  </head>
+  <body>
+
+    <test-fixture id="BasicTestFixture">
+      <template>
+        <las2peer-comment-widget></las2peer-comment-widget>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="ChangedPropertyTestFixture">
+      <template>
+        <las2peer-comment-widget prop1="new-prop1"></las2peer-comment-widget>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('las2peer-comment-widget', () => {
+
+        test('instantiating the element with default properties works', () => {
+          const element = fixture('BasicTestFixture');
+          assert.equal(element.prop1, 'las2peer-comment-widget');
+          const elementShadowRoot = element.shadowRoot;
+          const elementHeader = elementShadowRoot.querySelector('h2');
+          assert.equal(elementHeader.innerHTML, 'Hello las2peer-comment-widget!');
+        });
+
+        test('setting a property on the element works', () => {
+          // Create a test fixture
+          const element = fixture('ChangedPropertyTestFixture');
+          assert.equal(element.prop1, 'new-prop1');
+          const elementShadowRoot = element.shadowRoot;
+          const elementHeader = elementShadowRoot.querySelector('h2');
+          assert.equal(elementHeader.innerHTML, 'Hello new-prop1!');
+        });
+
+      });
+    </script>
+
+  </body>
+</html>

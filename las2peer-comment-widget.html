@@ -1,0 +1,641 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/editor-icons.html">
+<link rel="import" href="../iron-form/iron-form.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../polymer/lib/elements/dom-if.html">
+<link rel="import" href="../polymer/lib/elements/dom-repeat.html">
+
+<dom-module id="single-comment">
+  <template>
+    <iron-ajax id="ajaxComment"
+
+               url = '[[baseUrl]]/comment/[[id]]'
+               params='{}'
+               handle-as="json"
+               on-response="_receiveComment"
+               on-error="_handleError"
+               headers = '[[requestHeaders]]'
+    >
+    </iron-ajax>
+
+    <iron-ajax id="ajaxVoteUp"
+
+               url='[[baseUrl]]/comment/[[id]]/votes'
+               method='POST'
+               params='{}'
+               body='true'
+               handle-as="json"
+               on-response="_receiveVote"
+               on-error="_handleError"
+               headers = '[[requestHeaders]]'
+               content-type = 'text/plain'>
+    </iron-ajax>
+
+    <iron-ajax id="ajaxVoteDown"
+
+               url='[[baseUrl]]/comment/[[id]]/votes'
+               method='POST'
+               params='{}'
+               body='false'
+               handle-as="json"
+               on-response="_receiveVote"
+               on-error="_handleError"
+               headers = '[[requestHeaders]]'
+               content-type = 'text/plain'>
+    </iron-ajax>
+
+    <iron-ajax id="ajaxDeleteComment"
+
+               url='[[baseUrl]]/comment/[[data.id]]'
+               method='DELETE'
+               params='{}'
+               handle-as="json"
+               on-response="_receiveDeleteComment"
+               on-error="_handleError"
+               headers = '[[requestHeaders]]'
+               content-type = 'text/plain'
+    >
+    </iron-ajax>
+
+    <iron-ajax id="ajaxEditComment"
+
+               url='[[baseUrl]]/comment/[[data.id]]'
+               method='PUT'
+               params='{}'
+               handle-as="json"
+               on-response="_receiveEditComment"
+               on-error="_handleError"
+               headers = '[[requestHeaders]]'
+               loading = "{{_editingComment}}"
+               content-type = 'text/plain'
+    >
+    </iron-ajax>
+
+    <style>
+      :host {
+        display: block;
+        box-sizing: border-box;
+        @apply(--layout-vertical);
+      }
+
+      paper-card {
+        margin:0.5em;
+      }
+
+      .subcomments {
+        margin-left: 1em;
+      }
+
+      iron-icon.active {
+        --iron-icon-fill-color: #2196F3;
+      }
+
+      .details {
+        color:#555;
+        font-style: italic;
+      }
+
+      .error {
+        margin:0.5em;
+      }
+    </style>
+
+    <paper-dialog modal="true" id="error">
+      <h2>Error</h2>
+      <div>An error occurred. Please try again.</div>
+      <div class="buttons">
+        <paper-button raised dialog-dismiss>Close</paper-button>
+      </div>
+    </paper-dialog>
+
+    <paper-card>
+      <div class="card-content">
+        <div class="details">
+          [[data.author.name]] - <relative-time datetime$="[[_transformDate(data.date)]]"></relative-time>
+        </div>
+        <template  is="dom-if" if="{{!showEdit}}">
+          [[data.body]]
+        </template>
+        <template  is="dom-if" if="{{showEdit}}">
+          <iron-form>
+            <form  enctype="application/json" on-iron-form-presubmit="_submitComment">
+              <paper-textarea name="body" label="comment" required auto-validate value="[[data.body]]"></paper-textarea><br>
+              <paper-button raised on-click="_editComment" disabled="[[_editingComment]]">Save</paper-button>
+              <paper-spinner active="[[_editingComment]]"></paper-spinner>
+            </form>
+          </iron-form>
+
+        </template>
+      </div>
+
+      <div class="card-actions">
+        <paper-button raised on-click="_voteUp" disabled="[[!isWriter]]">
+          <iron-icon icon="thumb-up" class="active" hidden="{{!_isEqual(data.myRating,1)}}"></iron-icon>
+          <iron-icon icon="thumb-up" hidden="{{_isEqual(data.myRating,1)}}"></iron-icon>
+          [[data.upvotes]]
+        </paper-button>
+        <paper-button raised on-click="_voteDown" disabled="[[!isWriter]]">
+          <iron-icon icon="thumb-down" class="active" hidden="{{!_isEqual(data.myRating,-1)}}"></iron-icon>
+          <iron-icon icon="thumb-down" hidden="{{_isEqual(data.myRating,-1)}}"></iron-icon>
+          [[data.downvotes]]
+        </paper-button>
+        <paper-button raised on-click="_toggleSubcomments">
+          <iron-icon icon="communication:comment" class="active" hidden="{{!showSubcomments}}"></iron-icon>
+          <iron-icon icon="communication:comment" hidden="{{showSubcomments}}"></iron-icon>
+          replies ({{data.replyCount}})
+        </paper-button>
+
+        <paper-button raised on-click="_toggleEdit" hidden="[[_hideEdit(data.author.isMe,isAdmin)]]">
+          <iron-icon icon="editor:mode-edit" class="active" hidden="{{!showEdit}}"></iron-icon>
+          <iron-icon icon="editor:mode-edit" hidden="{{showEdit}}"></iron-icon>
+          Edit
+        </paper-button>
+        <paper-button raised on-click="_deleteComment" hidden="[[_hideEdit(data.author.isMe,isAdmin)]]">
+          <iron-icon icon="delete"></iron-icon>
+          Delete
+        </paper-button>
+      </div>
+    </paper-card>
+
+    <template  is="dom-if" if="{{showSubcomments}}">
+      <div class="subcomments">
+        <comment-list base-url="[[baseUrl]]" id="[[data.id]]" is-admin="[[isAdmin]]" is-writer="[[isWriter]]" request-headers="[[requestHeaders]]"></comment-list>
+      </div>
+    </template>
+  </template>
+
+  <script>
+      class singleComment extends Polymer.Element{
+          static get is() { return 'single-comment'; }
+
+          static get properties() {
+              return {
+                  isWriter: {
+                      type: Boolean,
+                      value: false
+                  },
+                  isAdmin: {
+                      type: Boolean,
+                      value: false
+                  },
+                  id: String,
+                  baseUrl: String,
+                  data: Object,
+                  showSubcomments: {
+                      type: Boolean,
+                      value: false
+                  },
+                  showEdit: {
+                      type: Boolean,
+                      value: false
+                  },
+                  _editingComment: {
+                      type: Boolean,
+                      value: false
+                  },
+                  requestHeaders: {
+                      type: Object,
+                      value: {}
+                  }
+              };
+          }
+
+          constructor() {
+              super();
+          }
+
+          connectedCallback() {
+              if (this.data.unresolved === true) {
+                  this.shadowRoot.querySelector('#ajaxComment').generateRequest();
+              }
+          }
+
+          // Element Behavior
+
+          _toggleSubcomments(event) {
+              this.showSubcomments = !this.showSubcomments;
+          }
+
+          _toggleEdit(event) {
+              this.showEdit = !this.showEdit;
+          }
+
+          _hideEdit(me, admin) {
+              return !(me || admin);
+          }
+
+          _isEqual(val1,val2) {
+              return (val1===val2);
+          }
+
+          _submitButton(event) {
+              event.target.parentElement.submit();
+          }
+
+          _transformDate(date) {
+              if (date!==undefined)
+                  return date.replace(" ","T");
+              else
+                  return "";
+          }
+
+          // Data processing
+
+          _receiveComment(event) {
+              this.data = event.target.lastResponse;
+          }
+
+          _receiveDeleteComment(event) {
+              var self = this;
+              this.dispatchEvent(new CustomEvent('deleted', {detail: {commentId: self.id}}));
+          }
+
+          _receiveVote(event) {
+              this.set('data.upvotes', event.target.lastResponse.upvotes);
+              this.set('data.downvotes', event.target.lastResponse.downvotes);
+          }
+
+          _receiveEditComment(event) {
+              this.data = event.target.lastResponse;
+              this.showEdit = false;
+          }
+
+          // send requests
+
+          _deleteComment(event) {
+              //this.$.ajaxDeleteComment.generateRequest();
+              this.shadowRoot.querySelector('#ajaxDeleteComment').generateRequest();
+          }
+
+          _voteUp(event) {
+              this.set('data.myRating', 1);
+              //this.$.ajaxVoteUp.generateRequest();
+              this.shadowRoot.querySelector('#ajaxVoteUp').generateRequest();
+          }
+
+          _voteDown(event) {
+              this.set('data.myRating', -1);
+              //this.$.ajaxVoteDown.generateRequest();
+              this.shadowRoot.querySelector('#ajaxVoteDown').generateRequest();
+          }
+
+          _editComment(event) {
+              event.preventDefault();
+
+              var form = event.target.parentElement;
+              var ajax = this.shadowRoot.querySelector('#ajaxEditComment');
+
+              ajax.body = ajax.body = form.querySelector('paper-textarea').value;
+
+              ajax.generateRequest();
+          }
+
+          // Error handling
+
+          _handleError(event) {
+              document.getElementById('error').open();
+              console.log(event);
+          }
+
+      }
+
+      window.customElements.define(singleComment.is, singleComment);
+  </script>
+</dom-module>
+
+<dom-module id="comment-list">
+    <template>
+        <iron-ajax id="ajaxThread"
+                   url='[[baseUrl]]/threads/[[id]]'
+                   params='{}'
+                   handle-as="json"
+                   on-response="_receiveThread"
+                   on-error="_handleError"
+                   headers = '[[requestHeaders]]'
+        >
+        </iron-ajax>
+
+        <iron-ajax id="ajaxComments"
+                   url='[[baseUrl]]/comment/[[id]]/comments'
+                   params='{}'
+                   handle-as="json"
+                   on-response="_receiveComments"
+                   on-error="_handleError"
+                   headers = '[[requestHeaders]]'
+        >
+        </iron-ajax>
+
+        <iron-ajax id="ajaxSubmitComment"
+                   method='POST'
+                   handle-as="text"
+                   on-response="_receiveSendComment"
+                   on-error="_handleError"
+                   headers = '[[requestHeaders]]',
+                   loading = "{{_submittingComment}}"
+                   content-type = 'text/plain'
+        >
+        </iron-ajax>
+
+        <style>
+            :host {
+                display: block;
+                box-sizing: border-box;
+            }
+
+            .comments {
+                @apply(--layout-vertical);
+            }
+
+            .comments paper-card {
+                margin:0.5em;
+            }
+
+            .error {
+                margin:0.5em;
+            }
+        </style>
+
+        <paper-dialog modal="true" id="error">
+            <h2>Error</h2>
+            <div>An error occurred. Please try again.</div>
+            <div class="buttons">
+                <paper-button raised dialog-dismiss>Close</paper-button>
+            </div>
+        </paper-dialog>
+
+        <paper-card hidden="[[!_accessDenied]]" style="width:100%">
+            <div class="card-content">
+                Sorry, you do not have access to these comments. Please log in or ask the owner for access rights.
+            </div>
+        </paper-card>
+
+        <div class="comments" hidden=[[_accessDenied]]>
+            <template is="dom-repeat" items="[[_data]]">
+                <single-comment base-url="[[baseUrl]]" id="[[item.id]]" data="{{item}}" is-admin="[[isAdmin]]" is-writer="[[isWriter]]" on-deleted="_receiveDeleteComment" request-headers="[[requestHeaders]]"></single-comment>
+            </template>
+
+            <paper-card hidden="{{ !isWriter }}">
+                <div class="card-content">
+                    <iron-form>
+                        <form  enctype="application/json" on-iron-form-presubmit="_submitComment">
+                            <paper-textarea name="body" label="comment" required auto-validate value=""></paper-textarea><br>
+                            <paper-button raised name="b1" value="" on-click="_submitComment" disabled="[[_submittingComment]]" class="pink" >Submit Comment</paper-button>
+                            <paper-spinner name="b2" value="" active="[[_submittingComment]]"></paper-spinner>
+                        </form>
+                    </iron-form>
+
+                </div>
+            </paper-card>
+        </div>
+    </template>
+
+
+    <script>
+        class commentList extends Polymer.Element{
+            static get is() { return 'comment-list'; }
+
+            static get properties(){
+                return {
+                    isWriter: {
+                        type: Boolean,
+                        value: false
+                    },
+                    isAdmin: {
+                        type: Boolean,
+                        value: false
+                    },
+                    isThread: {
+                        type: Boolean,
+                        value: false
+                    },
+                    id: String,
+                    baseUrl: String,
+                    _data: Object,
+                    _shownSubcomments: {
+                        type: Object,
+                        value: {}
+                    },
+                    _submittingComment: {
+                        type: Boolean,
+                        value: false
+                    },
+                    _accessDenied: {
+                        type: Boolean,
+                        value: false
+                    },
+                    requestHeaders: {
+                        type: Object,
+                        value: {}
+                    }
+                };
+            }
+
+            constructor() {
+                super();
+
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                if (this.isThread == true) {
+                    this.shadowRoot.querySelector('#ajaxThread').auto = true;
+                }
+                else {
+                    this.shadowRoot.querySelector('#ajaxComments').auto = true;
+                }
+            }
+
+            // Element Behavior
+
+            _submitButton(event) {
+                event.target.parentElement.submit();
+            }
+
+            // Data processing
+
+            _receiveThread(event) {
+                this._accessDenied = false;
+                this._data = event.target.lastResponse.comments;
+                this.isWriter = event.target.lastResponse.isWriter;
+                this.isAdmin = event.target.lastResponse.isAdmin;
+            }
+
+            _receiveComments(event) {
+                this._accessDenied = false;
+                this._data = event.target.lastResponse.comments;
+            }
+
+            _receiveSendComment(event) {
+                this._accessDenied = false;
+                this.push('_data', {id: event.target.lastResponse, unresolved: true});
+            }
+
+            _receiveDeleteComment(event) {
+                this._accessDenied = false;
+                for (var i = 0; i < this._data.length; i++) {
+                    if (this._data[i].id == event.detail.commentId) {
+                        this.splice('_data', i, 1);
+                        break;
+                    }
+                }
+            }
+
+            // send requests
+
+            _submitComment(event) {
+                event.preventDefault();
+
+                var form = event.target.parentElement;
+                var ajax = this.shadowRoot.querySelector('#ajaxSubmitComment');
+                if (this.isThread) {
+                    ajax.url = this.baseUrl+"/threads/"+this.id
+                }
+                else {
+                    ajax.url = this.baseUrl+"/comment/"+this.id+"/comments"
+                }
+                ajax.body = form.querySelector('paper-textarea').value;
+
+                form.querySelector('paper-textarea').value = "";
+
+                ajax.generateRequest();
+            }
+
+            // Error handling
+
+            _handleError(event) {
+                console.log(event)
+
+                if (event.detail.error.message.includes("403")) {
+                    this._accessDenied = true;
+                }
+                else {
+                    document.getElementById('error').open()
+                }
+            }
+        }
+
+        window.customElements.define(commentList.is, commentList);
+    </script>
+</dom-module>
+
+
+<!--
+Shows the comments contained in the thread and allows interaction if permission
+is set.
+
+Example:
+
+    <las2peer-comment-widget thread='...'></las2peer-comment-widget>
+
+
+@demo demo/index.html
+-->
+
+<dom-module id="las2peer-comment-widget">
+  <template>
+    <style>
+      :host {
+        display: block;
+        box-sizing: border-box;
+      }
+    </style>
+      <template is="dom-if" if="[[!_isNull(thread)]]">
+          <comment-list base-url="[[_baseUrl]]" is-thread id="[[thread]]" request-headers="[[_requestHeaders]]"></comment-list>
+      </template>
+  </template>
+
+  <script>
+    /**
+     * `las2peer-comment-widget`
+     * las2peer threaded comment widget with polymer 2
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class Las2peerCommentWidget extends Polymer.Element {
+      static get is() { return 'las2peer-comment-widget'; }
+        static get properties(){
+            return {
+                _baseUrl:  {
+                    type: String,
+                    computed: '_computeBaseURL(baseUrl)'
+                },
+                baseUrl: {
+                    type: String,
+                    value: 'https://las2peer.dbis.rwth-aachen.de:9098/',
+                },
+                thread: {
+                    type: String,
+                    value: null
+                },
+                loginName: {
+                    type: String,
+                    value: null
+                },
+                loginPassword: {
+                    type: String,
+                    value: null
+                },
+                loginOidcToken: {
+                    type: String,
+                    value: null
+                },
+                loginOidcProvider: {
+                    type: String,
+                    value: null
+                },
+                _requestHeaders: {
+                    type: Object,
+                    computed: '_computeHeaders(loginName,loginPassword,loginOidcToken,loginOidcProvider)'
+                }
+            };
+        }
+
+        constructor() {
+            super();
+        }
+
+        _computeBaseURL(base) {
+            if (!base.endsWith('/')) {
+                base = base + '/';
+            }
+            return base + "comments";
+        }
+
+        _computeHeaders(loginName,loginPassword,loginOidcToken,loginOidcProvider) {
+            var headers = {};
+
+            if (loginName != null && loginPassword != null) {
+                headers["Authorization"] = "Basic " + btoa(loginName + ":" + loginPassword);
+            }
+            else if(loginOidcToken != null) {
+                headers["access_token"] = loginOidcToken;
+
+                if (loginOidcProvider != null) {
+                    headers["oidc_provider"] = loginOidcProvider;
+                }
+            }
+
+            return headers;
+        }
+
+        _isNull(val) {
+            return val == null;
+        }
+    }
+
+    window.customElements.define(Las2peerCommentWidget.is, Las2peerCommentWidget);
+  </script>
+</dom-module>

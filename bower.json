@@ -1,22 +1,7 @@
 {
-  "name": "las2peer-comment-thread-widget",
-  "version": "0.1.0",
-  "authors": [
-    "Jasper Nalbach <nalbach@dbis.rwth-aachen.de>"
-  ],
-  "description": "A frontend for the las2peer-ThreadedComment-Service",
-  "keywords": [
-    "web-component",
-    "polymer",
-    "las2peer"
-  ],
-  "main": "las2peer-comment-thread-widget.html",
-  "license": "MIT",
-  "homepage": "https://github.com/rwth-acis/las2peer-comment-thread-widget/",
-  "ignore": [
-    "/.*",
-    "/test/"
-  ],
+  "name": "las2peer-comment-widget",
+  "description": "las2peer threaded comment widget with polymer 2",
+  "main": "las2peer-comment-widget.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
     "paper-card": "PolymerElements/paper-card#^2.1.0",
@@ -26,11 +11,17 @@
     "paper-input": "PolymerElements/paper-input#^2.2.2",
     "iron-form": "PolymerElements/iron-form#^2.3.0",
     "paper-spinner": "PolymerElements/paper-spinner#^2.1.0",
+    "paper-dialog": "PolymerElements/paper-dialog#^2.1.1",
     "time-elements": "^1.0.2",
-    "paper-dialog": "PolymerElements/paper-dialog#^2.1.1"
+    "iron-meta": "PolymerElements/iron-meta#^2.1.1",
+    "iron-icons": "PolymerElements/iron-icons#^2.1.1"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^3.0.1",
-    "web-component-tester": "^6.6.0"
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",
+    "web-component-tester": "Polymer/web-component-tester#^6.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+  },
+  "resolutions": {
+    "polymer": "^2.0.0"
   }
 }
